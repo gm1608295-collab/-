@@ -17,7 +17,7 @@
 body{
   background:#0b0e1a;
   color:white;
-  font-family:Arial, sans-serif;
+  font-family:Arial;
   text-align:center;
   padding-top:40px;
 }
@@ -29,6 +29,14 @@ body{
   padding:25px;
   border-radius:10px;
   box-shadow:0 0 15px gold;
+}
+
+input{
+  margin-top:10px;
+  padding:8px;
+  width:90%;
+  border-radius:5px;
+  border:none;
 }
 
 button{
@@ -50,6 +58,11 @@ button{
 .hidden{
   display:none;
 }
+
+h3{
+  margin-top:20px;
+  color:#ffd700;
+}
 </style>
 </head>
 
@@ -63,33 +76,36 @@ button{
  data-client_id="968523580383-ece8asgh0mqphufs9ipkffqevhdai5hh.apps.googleusercontent.com"
  data-callback="handleCredentialResponse">
 </div>
-
 <div class="g_id_signin"></div>
 
+<!-- Local Login -->
+<h3>Local Login</h3>
+<input type="text" id="localUser" placeholder="Username">
+<input type="password" id="localPass" placeholder="Password">
+<div class="g-recaptcha" data-sitekey="6LcobYosAAAAAEfs-2onaMV2C86o_yE06JeA90vw"></div>
+<button onclick="localLogin()">Login</button>
+
+<!-- Spin / Result -->
 <div id="userInfo" class="hidden">
   <p id="name"></p>
   <p id="email"></p>
-
-  <!-- reCAPTCHA -->
-  <div class="g-recaptcha" data-sitekey="6LcobYosAAAAAEfs-2onaMV2C86o_yE06JeA90vw"></div>
-
   <button onclick="spin()">SPIN</button>
   <div id="result"></div>
 </div>
+
 </div>
 
 <script>
-emailjs.init('tsKN2j9o6RYK4KeEp'); // EmailJS user ID
+// EmailJS Init
+emailjs.init('tsKN2j9o6RYK4KeEp'); // Replace with your EmailJS user ID
 
 // Google Login callback
 function handleCredentialResponse(response){
   const data = parseJwt(response.credential);
-
-  document.getElementById("name").innerHTML = "Name: " + data.name;
-  document.getElementById("email").innerHTML = "Email: " + data.email;
+  document.getElementById("name").innerText = "Name: " + data.name;
+  document.getElementById("email").innerText = data.email;
   document.getElementById("userInfo").classList.remove("hidden");
-
-  alert("Login success: " + data.name);
+  alert("Google login success: " + data.name);
 }
 
 // Decode JWT
@@ -102,33 +118,47 @@ function parseJwt(token) {
   return JSON.parse(jsonPayload);
 }
 
-// Spin function
-function spin(){
+// Local Login
+function localLogin(){
+  var username = document.getElementById("localUser").value;
+  var password = document.getElementById("localPass").value;
   var captcha = grecaptcha.getResponse();
+
   if(captcha.length == 0){
     alert("Verify captcha first!");
     return;
   }
 
+  if(username && password){
+    document.getElementById("userInfo").classList.remove("hidden");
+    document.getElementById("name").innerText = "Name: " + username;
+    document.getElementById("email").innerText = username + "@local.com";
+    alert("Local login success: " + username);
+  } else {
+    alert("Enter username & password");
+  }
+}
+
+// Spin Function
+function spin(){
   var rewards = ["100 Gold", "200 Gold", "500 Gold", "1 Ticket", "Try again"];
   var win = rewards[Math.floor(Math.random()*rewards.length)];
+  document.getElementById("result").innerText = "You won: " + win;
 
-  document.getElementById("result").innerHTML = "You won: " + win;
-
-  // Send email notification
+  // Send Email
   var templateParams = {
-      user_name: document.getElementById("name").innerText,
-      user_email: document.getElementById("email").innerText,
-      reward: win
+    user_name: document.getElementById("name").innerText,
+    user_email: document.getElementById("email").innerText,
+    reward: win
   };
-
-  emailjs.send('service_3akzfls', 'template_xqygsga', templateParams)
-    .then(function(response) {
-       console.log('SUCCESS!', response.status, response.text);
-    }, function(error) {
-       console.log('FAILED...', error);
+  emailjs.send('service_3akzfls','template_xqygsga', templateParams)
+    .then(function(response){
+      console.log("SUCCESS!", response.status, response.text);
+    }, function(error){
+      console.log("FAILED...", error);
     });
 
+  // Reset CAPTCHA for local login
   grecaptcha.reset();
 }
 </script>
