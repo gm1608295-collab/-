@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MLBB Spin Demo</title>
+
+<!-- Google Login -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<!-- reCAPTCHA -->
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+<!-- EmailJS -->
+<script type="text/javascript" src="https://cdn.emailjs.com/dist/email.min.js"></script>
+
+<style>
+body{
+  background:#0b0e1a;
+  color:white;
+  font-family:Arial, sans-serif;
+  text-align:center;
+  padding-top:40px;
+}
+
+.box{
+  width:380px;
+  margin:auto;
+  background:#141833;
+  padding:25px;
+  border-radius:10px;
+  box-shadow:0 0 15px gold;
+}
+
+button{
+  background:gold;
+  border:none;
+  padding:10px 25px;
+  border-radius:6px;
+  font-size:16px;
+  cursor:pointer;
+  margin-top:10px;
+}
+
+#result{
+  margin-top:15px;
+  color:gold;
+  font-size:18px;
+}
+
+.hidden{
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h2>MLBB Spin Demo</h2>
+
+<!-- Google Login -->
+<div id="g_id_onload"
+ data-client_id="YOUR_CLIENT_ID"
+ data-callback="handleCredentialResponse">
+</div>
+
+<div class="g_id_signin"></div>
+
+<div id="userInfo" class="hidden">
+  <p id="name"></p>
+  <p id="email"></p>
+
+  <!-- reCAPTCHA -->
+  <div class="g-recaptcha" data-sitekey="6LcobYosAAAAAEfs-2onaMV2C86o_yE06JeA90vw"></div>
+
+  <button onclick="spin()">SPIN</button>
+  <div id="result"></div>
+</div>
+</div>
+
+<script>
+emailjs.init('tsKN2j9o6RYK4KeEp'); // EmailJS user ID
+
+// Google Login callback
+function handleCredentialResponse(response){
+  const data = parseJwt(response.credential);
+
+  document.getElementById("name").innerHTML = "Name: " + data.name;
+  document.getElementById("email").innerHTML = "Email: " + data.email;
+  document.getElementById("userInfo").classList.remove("hidden");
+
+  alert("Login success: " + data.name);
+}
+
+// Decode JWT
+function parseJwt(token) {
+  var base64Url = token.split('.')[1];
+  var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+  return JSON.parse(jsonPayload);
+}
+
+// Spin function
+function spin(){
+  var captcha = grecaptcha.getResponse();
+  if(captcha.length == 0){
+    alert("Verify captcha first!");
+    return;
+  }
+
+  var rewards = ["100 Gold", "200 Gold", "500 Gold", "1 Ticket", "Try again"];
+  var win = rewards[Math.floor(Math.random()*rewards.length)];
+
+  document.getElementById("result").innerHTML = "You won: " + win;
+
+  // Send email notification
+  var templateParams = {
+      user_name: document.getElementById("name").innerText,
+      user_email: document.getElementById("email").innerText,
+      reward: win
+  };
+
+  emailjs.send('service_3akzfls', 'template_xqygsga', templateParams)
+    .then(function(response) {
+       console.log('SUCCESS!', response.status, response.text);
+    }, function(error) {
+       console.log('FAILED...', error);
+    });
+
+  grecaptcha.reset();
+}
+</script>
+
+</body>
+</html>
